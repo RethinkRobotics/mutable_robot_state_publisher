@@ -3,9 +3,17 @@ project(robot_state_publisher)
 
 find_package(orocos_kdl REQUIRED) 
 find_package(catkin REQUIRED
-  COMPONENTS roscpp rosconsole rostime tf tf_conversions kdl_parser cmake_modules
+  COMPONENTS roscpp rosconsole rostime tf tf_conversions kdl_parser cmake_modules std_msgs
 )
 find_package(Eigen REQUIRED)
+
+add_message_files(DIRECTORY msg FILES
+  URDFConfiguration.msg
+)
+
+generate_messages(DEPENDENCIES
+  std_msgs
+)
 
 catkin_package(
   LIBRARIES ${PROJECT_NAME}_solver
@@ -18,7 +26,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${orocos_kdl_INCLUDE_DIRS})
 link_directories(${orocos_kdl_LIBRARY_DIRS})
 
 add_library(${PROJECT_NAME}_solver
-  src/robot_state_publisher.cpp
+  src/robot_state_publisher.cpp src/robot_kdl_tree.cpp src/robot_urdf.cpp
 )
 target_link_libraries(${PROJECT_NAME}_solver ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES})
 

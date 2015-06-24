@@ -57,7 +57,8 @@ public:
   /** Constructor
    * \param tree The kinematic model of a robot, represented by a KDL Tree
    */
-  JointStateListener(const KDL::Tree& tree, const MimicMap& m);
+  JointStateListener(const MimicMap& m);
+  bool init();
 
   /// Destructor
   ~JointStateListener();
@@ -65,12 +66,15 @@ public:
 private:
   void callbackJointState(const JointStateConstPtr& state);
   void callbackFixedJoint(const ros::TimerEvent& e);
+  void callbackSaveUrdf(const ros::TimerEvent& e);
 
   std::string tf_prefix_;
   Duration publish_interval_;
+  Duration save_interval_;
   robot_state_publisher::RobotStatePublisher state_publisher_;
   Subscriber joint_state_sub_;
-  ros::Timer timer_;
+  ros::Timer pub_timer_;
+  ros::Timer save_timer_;
   ros::Time last_callback_time_;
   std::map<std::string, ros::Time> last_publish_time_;
   MimicMap mimic_;

@@ -35,7 +35,6 @@
 /* Author: Wim Meeussen */
 
 #include <urdf/model.h>
-#include <kdl/tree.hpp>
 #include <ros/ros.h>
 #include "robot_state_publisher/robot_state_publisher.h"
 #include "robot_state_publisher/joint_state_listener.h"
@@ -47,8 +46,8 @@ using namespace ros;
 using namespace KDL;
 using namespace robot_state_publisher;
 
-JointStateListener::JointStateListener(const KDL::Tree& tree, const MimicMap& m)
-  : state_publisher_(tree), mimic_(m)
+JointStateListener::JointStateListener(const MimicMap& m)
+  : state_publisher_(), mimic_(m)
 {
   ros::NodeHandle n_tilde("~");
   ros::NodeHandle n;
@@ -61,19 +60,37 @@ JointStateListener::JointStateListener(const KDL::Tree& tree, const MimicMap& m)
   n_tilde.searchParam("tf_prefix", tf_prefix_key);
   n_tilde.param(tf_prefix_key, tf_prefix_, std::string(""));
   publish_interval_ = ros::Duration(1.0/max(publish_freq,1.0));
+  save_interval_ = ros::Duration(1.0/20.0);
 
   // subscribe to joint state
   joint_state_sub_ = n.subscribe("joint_states", 1, &JointStateListener::callbackJointState, this);
 
   // trigger to publish fixed joints
-  timer_ = n_tilde.createTimer(publish_interval_, &JointStateListener::callbackFixedJoint, this);
+  pub_timer_ = n_tilde.createTimer(publish_interval_, &JointStateListener::callbackFixedJoint, this);
 
+  // Only one node should set the robot_description parameter:
+  bool set_robot_description = false;
+  n_tilde.param<bool>("set_robot_description", set_robot_description, false);
+  if (set_robot_description)
+  {
+    ROS_INFO("This node will set the robot_description parameter.");
+    save_timer_ = n_tilde.createTimer(save_interval_, &JointStateListener::callbackSaveUrdf, this);
+  }
 };
+
+bool JointStateListener::init()
+{
+  return state_publisher_.init();
+}
 
 
 JointStateListener::~JointStateListener()
-{};
+{}
 
+void JointStateListener::callbackSaveUrdf(const ros::TimerEvent& e)
+{
+  state_publisher_.setRobotDescriptionIfChanged();
+}
 
 void JointStateListener::callbackFixedJoint(const ros::TimerEvent& e)
 {
@@ -149,12 +166,7 @@ int main(int argc, char** argv)
 
   // gets the location of the robot description on the parameter server
   urdf::Model model;
-  model.initParam("robot_description");
-  KDL::Tree tree;
-  if (!kdl_parser::treeFromUrdfModel(model, tree)){
-    ROS_ERROR("Failed to extract kdl tree from xml robot description");
-    return -1;
-  }
+  model.initParam("robot_base_description");
 
   MimicMap mimic;
 
@@ -164,7 +176,8 @@ int main(int argc, char** argv)
     }
   }
 
-  JointStateListener state_publisher(tree, mimic);
+  JointStateListener state_publisher(mimic);
+  state_publisher.init();
   ros::spin();
 
   return 0;

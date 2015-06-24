@@ -44,6 +44,7 @@
 #include <kdl/frames.hpp>
 #include <kdl/segment.hpp>
 #include <kdl/tree.hpp>
+#include <robot_state_publisher/robot_kdl_tree.h>
 
 namespace robot_state_publisher{
 
@@ -58,23 +59,29 @@ public:
 };
 
 
-class RobotStatePublisher
+class RobotStatePublisher : public robot_kdl_tree::RobotKDLTree
 {
 public:
+  virtual bool init();
+
+  virtual void onURDFSwap(const std::string &link_name);
+
   /** Constructor
-   * \param tree The kinematic model of a robot, represented by a KDL Tree 
+   * \param tree The kinematic model of a robot, represented by a KDL Tree
    */
-  RobotStatePublisher(const KDL::Tree& tree);
+  RobotStatePublisher();
 
   /// Destructor
   ~RobotStatePublisher(){};
 
-  /** Publish transforms to tf 
-   * \param joint_positions A map of joint names and joint positions. 
+  /** Publish transforms to tf
+   * \param joint_positions A map of joint names and joint positions.
    * \param time The time at which the joint positions were recorded
    */
   void publishTransforms(const std::map<std::string, double>& joint_positions, const ros::Time& time, const std::string& tf_prefix);
+  void publishFixedTransforms();
   void publishFixedTransforms(const std::string& tf_prefix);
+  void setRobotDescriptionIfChanged();
 
 private:
   void addChildren(const KDL::SegmentMap::const_iterator segment);
@@ -82,6 +89,9 @@ private:
 
   std::map<std::string, SegmentPair> segments_, segments_fixed_;
   tf::TransformBroadcaster tf_broadcaster_;
+
+  bool initialized_;
+  bool urdf_changed_;
 };
 
 
