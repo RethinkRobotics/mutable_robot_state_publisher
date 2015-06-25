@@ -117,10 +117,18 @@ bool RobotURDF::init(const std::string & urdfParamName)
       regenerateUrdf();
       swap();
 
-      ROS_INFO("RobotURDF:  Subscribing to /robot/urdf");
-      ros::NodeHandle handle("/robot");
-      m_URDFConfigurationSubscriber =
-          handle.subscribe("urdf", 10, &RobotURDF::onURDFConfigurationMsg, this,
+      ros::NodeHandle handle("/robot_urdf");
+      double hz;
+      handle.getParam("hz", hz, 5)
+      ROS_INFO("RobotURDF:  Publishing to /robot_urdf/current_urdf at %dHz", hz);
+      m_URDFConfigurationPublisher =
+          handle.advertise<robot_state_publisher::URDF>("current_urdf", 100);
+ &RobotURDF::onURDFConfigurationMsg, this);
+      ros::Timer timer = n.createTimer(ros::Duration(1.0/hz), onURDFPublisherCallback);
+     
+      ROS_INFO("RobotURDF:  Setting up service server at /robot_urdf/config_urdf");
+      m_URDFConfigServiceServer =
+          handle.advertiseService("urdf_config", &RobotURDF::onURDFConfigurationReq, this,
                            ros::TransportHints().tcpNoDelay());
     }
     else
@@ -134,6 +142,13 @@ bool RobotURDF::init(const std::string & urdfParamName)
   }
 
   return m_valid;
+}
+
+void RobotURDF::onURDFPublisherCallback()
+{
+  // Only one node should do this -- it takes 12 ms.
+  ROS_INFO("Saving the URDF to the parameter server");
+  ros::param::set("/robot_description", m_urdfDoc);
 }
 
 void RobotURDF::setRobotDescription()

@@ -165,7 +165,8 @@ class RobotURDF
 
   bool m_valid;
   uint32_t m_updateCount;  // debug
-  ros::Subscriber         m_URDFConfigurationSubscriber;
+  ros::Publisher          m_URDFConfigurationSubscriber;
+  ros::ServiceServer      m_URDFConfigServiceServer;
 
   static std::string makeKey(const std::string & linkName, const std::string & jointName)
     {  return linkName + "/" + jointName;  }
@@ -176,7 +177,7 @@ class RobotURDF
 
   bool regenerateUrdf();
 
-  void onURDFConfigurationMsg(const robot_state_publisher::URDFConfiguration &config);
+  void onURDFConfigurationRequest(const robot_state_publisher::URDFConfigService &config);
   virtual bool onURDFChange(const std::string &link_name);
   virtual void onURDFSwap(const std::string &link_name);
 

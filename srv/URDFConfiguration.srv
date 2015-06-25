@@ -1,0 +1,21 @@
+## URDF Configuration
+Header header  # time the message was created, serves as a sequence number
+               # time should be changed only when the content changes.
+string link    # parent link name
+string joint   # joint to configure
+               # link + joint + time uniquely identifies a configuration.
+string urdf    # JSON or XML encoded URDF data. This should be a URDF fragment
+               # describing the entire subtree for the given joint attached
+               # to the given parent link.
+               # Leave this field is empty when removing the joint from the parent link.
+uint8 ADD                = 0  # Add supplied urdf to link starting with supplied joint 
+uint8 REMOVE             = 1  # Remove URDF tree starting at supplied joint
+uint8 action_type             # Either ADD or REMOVE 
+---
+uint8 UPDATE_SUCCESS     = 0  # Successfully updated robot_description
+uint8 PARSE_ERROR        = 1  # Invalid URDF supplied
+uint8 DUPLICATE_CHAIN    = 2  # Supplied URDF chain aready exists
+uint8 SEGMENT_IMMUTABLE  = 3  # URDF attempts to modify immunable portion of URDF
+uint8 UPDATE_PREEMPTED   = 4  # Update preempted or locked out by another URDF update request
+
+uint8 update_status           # Enum describing update status
