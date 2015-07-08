@@ -36,20 +36,18 @@
 
 #include <map>
 #include <vector>
-#include <stdint.h>
 #include <string>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/signals2.hpp>
-#include <ros/ros.h>
-
-#include "urdf/model.h"
 
 #include <kdl/kdl.hpp>
 #include <kdl/tree.hpp>
 #include <kdl/chain.hpp>
 #include <kdl/jntarray.hpp>
 
+#include <ros/ros.h>
+#include <urdf/model.h>
 #include <robot_state_publisher/URDFConfiguration.h>
 
 namespace robot_urdf {
@@ -57,14 +55,14 @@ namespace robot_urdf {
 /**
  * \def BOOST_SIGNAL_DEFINE(name, returnType, handlerPrototype)
  * Convenience macro to define a signal as a class member.
- *    
+ *
  * The macro does three things:
- * 1. Define a public typedef called [name]Signal which is of type boost::signals2::signal<returnType(handlerPrototype)> 
+ * 1. Define a public typedef called [name]Signal which is of type boost::signals2::signal<returnType(handlerPrototype)>
  * 2. Define a protected [name]Signal member variable called m_signal[name]
- * 3. Define a public inline function called get[name]Signal() which returns a reference to m_signal[name].   
- *  
+ * 3. Define a public inline function called get[name]Signal() which returns a reference to m_signal[name].
+ *
  * For example:
- *  
+ *
  * \code
  * class MyClass {
  *   BOOST_SIGNAL_DEFINE(Feeling, void, (std::string));

@@ -253,7 +253,7 @@ void RobotURDF::onURDFConfigurationMsg(const robot_state_publisher::URDFConfigur
 
     if (fragment.xml.empty() && !config.urdf.empty())
     {
-      ROS_ERROR("URDFConfiguration failed; invalid JSON urdf:\n%s\n",
+      ROS_ERROR("URDFConfiguration failed; invalid urdf fragment:\n%s\n",
                 config.urdf.c_str());
       m_valid = false;
       return;
