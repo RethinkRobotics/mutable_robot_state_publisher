@@ -30,6 +30,7 @@ add_library(${PROJECT_NAME}_solver
   src/robot_state_publisher.cpp src/robot_kdl_tree.cpp src/robot_urdf.cpp
 )
 target_link_libraries(${PROJECT_NAME}_solver ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES})
+add_dependencies(${PROJECT_NAME}_solver ${PROJECT_NAME}_generate_messages_cpp)
 
 add_executable(${PROJECT_NAME} src/joint_state_listener.cpp)
 target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_solver ${orocos_kdl_LIBRARIES})
