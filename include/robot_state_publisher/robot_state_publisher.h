@@ -39,13 +39,16 @@
 
 #include <ros/ros.h>
 #include <boost/scoped_ptr.hpp>
+#include <boost/thread/shared_mutex.hpp>
 #include <tf/tf.h>
 #include <tf/transform_broadcaster.h>
 #include <kdl/frames.hpp>
 #include <kdl/segment.hpp>
 #include <kdl/tree.hpp>
 #include <robot_state_publisher/robot_kdl_tree.h>
+#include <urdf/model.h>
 
+typedef std::map<std::string, boost::shared_ptr<urdf::JointMimic> > MimicMap;
 namespace robot_state_publisher{
 
 class SegmentPair
@@ -69,7 +72,7 @@ public:
   /** Constructor
    * \param tree The kinematic model of a robot, represented by a KDL Tree
    */
-  RobotStatePublisher();
+  RobotStatePublisher(const urdf::Model m);
 
   /// Destructor
   ~RobotStatePublisher(){};
@@ -82,6 +85,8 @@ public:
   void publishFixedTransforms();
   void publishFixedTransforms(const std::string& tf_prefix);
   void setRobotDescriptionIfChanged();
+  void setJointMimicMap(const urdf::Model& model);
+  bool getJointMimicPositions(std::map<std::string, double>& joint_positions);
 
 private:
   void addChildren(const KDL::SegmentMap::const_iterator segment);
@@ -92,6 +97,8 @@ private:
 
   bool initialized_;
   bool urdf_changed_;
+  MimicMap mimic_;
+  boost::shared_mutex mimic_mtx_;
 };
 
 

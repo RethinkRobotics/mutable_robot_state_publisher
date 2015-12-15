@@ -34,7 +34,6 @@
 
 /* Author: Wim Meeussen */
 
-#include <urdf/model.h>
 #include <ros/ros.h>
 #include "robot_state_publisher/robot_state_publisher.h"
 #include "robot_state_publisher/joint_state_listener.h"
@@ -46,8 +45,8 @@ using namespace ros;
 using namespace KDL;
 using namespace robot_state_publisher;
 
-JointStateListener::JointStateListener(const MimicMap& m)
-  : state_publisher_(), mimic_(m)
+JointStateListener::JointStateListener(const urdf::Model&  m)
+  : state_publisher_(m)
 {
   ros::NodeHandle n_tilde("~");
   ros::NodeHandle n;
@@ -131,11 +130,9 @@ void JointStateListener::callbackJointState(const JointStateConstPtr& state)
     for (unsigned int i=0; i<state->name.size(); i++)
       joint_positions.insert(make_pair(state->name[i], state->position[i]));
 
-    for(MimicMap::iterator i = mimic_.begin(); i != mimic_.end(); i++){
-      if(joint_positions.find(i->second->joint_name) != joint_positions.end()){
-        double pos = joint_positions[i->second->joint_name] * i->second->multiplier + i->second->offset;
-        joint_positions.insert(make_pair(i->first, pos));
-      }
+    if(!state_publisher_.getJointMimicPositions(joint_positions))
+    {
+      ROS_WARN("Failed to update mimic joint transforms due to URDF update.");
     }
 
     state_publisher_.publishTransforms(joint_positions, state->header.stamp, tf_prefix_);
@@ -167,16 +164,7 @@ int main(int argc, char** argv)
   // gets the location of the robot description on the parameter server
   urdf::Model model;
   model.initParam("robot_base_description");
-
-  MimicMap mimic;
-
-  for(std::map< std::string, boost::shared_ptr< urdf::Joint > >::iterator i = model.joints_.begin(); i != model.joints_.end(); i++){
-    if(i->second->mimic){
-      mimic.insert(make_pair(i->first, i->second->mimic));
-    }
-  }
-
-  JointStateListener state_publisher(mimic);
+  JointStateListener state_publisher(model);
   state_publisher.init();
   ros::spin();
 

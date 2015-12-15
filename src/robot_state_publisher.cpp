@@ -45,9 +45,10 @@ using namespace ros;
 
 namespace robot_state_publisher{
 
-  RobotStatePublisher::RobotStatePublisher()
+  RobotStatePublisher::RobotStatePublisher(const urdf::Model m)
     : initialized_(false)
   {
+    setJointMimicMap(m);
   }
 
   bool RobotStatePublisher::init()
@@ -63,6 +64,36 @@ namespace robot_state_publisher{
     return initialized_;
   }
 
+  void RobotStatePublisher::setJointMimicMap(const urdf::Model& model)
+  {
+    ROS_DEBUG("robot_state_publisher: Updating MimicMap.");
+    // get exclusive access for writing
+    boost::unique_lock<boost::shared_mutex> lock(mimic_mtx_);
+    mimic_.clear();
+    for(std::map< std::string, boost::shared_ptr< urdf::Joint > >::const_iterator i = model.joints_.begin(); i != model.joints_.end(); i++){
+      if(i->second->mimic){
+        mimic_.insert(make_pair(i->first, i->second->mimic));
+      }
+    }
+  }
+
+  bool RobotStatePublisher::getJointMimicPositions(std::map<std::string, double>& joint_positions)
+  {
+    // get shared access for reading
+    boost::shared_lock<boost::shared_mutex> lock(mimic_mtx_, boost::try_to_lock);
+    if (!lock.owns_lock())
+    {
+      ROS_DEBUG("robot_state_publisher: Failed to update positions for Mimic joints -- could not get lock");
+      return false;
+    }
+    for(MimicMap::const_iterator i = mimic_.begin(); i != mimic_.end(); i++){
+      if(joint_positions.find(i->second->joint_name) != joint_positions.end()){
+        double pos = joint_positions[i->second->joint_name] * i->second->multiplier + i->second->offset;
+        joint_positions.insert(make_pair(i->first, pos));
+      }
+    }
+    return true;
+  }
 
   /** This is called whenever a segment changes.
    *  When that happens, rebuild all of the tf segments.
@@ -81,6 +112,13 @@ namespace robot_state_publisher{
     segments_.clear();
     // walk the tree and add segments to segments_
     addChildren(getTree().getRootSegment());
+    boost::shared_ptr<const urdf::Model> urdf_ptr = getUrdfPtr();
+    if(urdf_ptr){
+      setJointMimicMap(*urdf_ptr);
+    }
+    else{
+      ROS_ERROR("robot_state_publisher: failed retrieve Robot Model for updating joint MimicMap!");
+    }
     urdf_changed_ = true;
   }
 
